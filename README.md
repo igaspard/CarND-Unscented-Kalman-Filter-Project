@@ -1,92 +1,51 @@
-# Unscented Kalman Filter Project Starter Code
-Self-Driving Car Engineer Nanodegree Program
+# Unscented Kalman Filter Project - Gaspard Shen
+ In this project, I implement an unscented Kalman filter using the CTRV motion model. By using the same bicycle simulation data set from the previous extended Kalman filter project, I can get px, py, vx and vy RMSE valuse **[.065, .081, .32, .22]** for Dataset 1 and **[.077, .063, .57, .24]** for Dataset 2 which pass the criteria in the project rubric.
 
-In this project utilize an Unscented Kalman Filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
+## Implementation
+Most of the Implementation was based on the instruction of the lecture coding exercise.
+Couple thing need try by ourself are:
+1. Need to initialize the **state vector x** and **state covariance matrix P** with appropriate values.
+2. **Normalize angles** so that angles are between −π and π.
+3. Check for **Divide By Zero**
+4. Tune the process noise parameters **std_a_** and **std_yawdd_**
 
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
+Here list some record of the parameter tuning.
+In the end, I choose `std_a_` as **1.0** and `std_yawdd_` as **0.5** and the covariance matrix P_ as
+```
+0.15, 0, 0, 0, 0
+0, 0.15, 0, 0, 0
+0,    0, 1, 0, 0
+0,    0, 0, 1, 0
+0,    0, 0, 0, 1
+```
 
-This repository includes two files that can be used to set up and intall [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. Please see [this concept in the classroom](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/16cf4a78-4fc7-49e1-8621-3450ca938b77) for the required version and installation scripts.
+Tuning the P_ and init V of state vector x_
+```
+std_a_ = 3.0; std_yawdd_ = 1.0;
 
-Once the install for uWebSocketIO is complete, the main program can be built and ran by doing the following from the project top directory.
+init V: 5.0
+Dataset1: X: 0.0735, Y: 0.0852, VX: 0.2027, VY: 0.2830
+Dataset2: X: 0.0749, Y: 0.0849, VX: 0.7623, VY: 0.4601
 
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./UnscentedKF
+init V: 3.0
+Dataset1: X: 0.0740, Y: 0.0861, VX: 0.3485, VY: 0.3691
+Dataset2: X: 0.0729, Y: 0.0757, VX: 0.6353, VY: 0.2944
 
-Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
+init V: 0.0
+Dataset1: X: 0.0731, Y: 0.0846, VX: 0.3521, VY: 0.2555
+Dataset2: X: 0.0804, Y: 0.0734, VX: 0.5920, VY: 0.2961
 
-Note that the programs that need to be written to accomplish the project are src/ukf.cpp, src/ukf.h, tools.cpp, and tools.h
+std_a_ = 1.0; std_yawdd_ = 0.5;
+Dataset1: X: 0.0659, Y: 0.0812, VX: 0.3271, VY: 0.2226
+Dataset2: X: 0.0771, Y: 0.0635, VX: 0.5749, VY: 0.2474
+```
+## Results
+Below are the result of Dataset 1 and set 2, set 1 can pass the project criteria [.09, .10, .40, .30].
+As compare with the previous extended Kalman filter result for set 1 [.097, .085, .45, .43] and set 2 [.072, .096, .45, .49]. UKF result are much better.
 
-The program main.cpp has already been filled out, but feel free to modify it.
+Dataset 1 RMSE: [.065, .081, 0.32, .22]
+![](./output/Dataset1_Result.png)
 
-Here is the main protcol that main.cpp uses for uWebSocketIO in communicating with the simulator.
-
-
-INPUT: values provided by the simulator to the c++ program
-
-["sensor_measurement"] => the measurment that the simulator observed (either lidar or radar)
-
-
-OUTPUT: values provided by the c++ program to the simulator
-
-["estimate_x"] <= kalman filter estimated position x
-["estimate_y"] <= kalman filter estimated position y
-["rmse_x"]
-["rmse_y"]
-["rmse_vx"]
-["rmse_vy"]
-
----
-
-## Other Important Dependencies
-* cmake >= 3.5
-  * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1 (Linux, Mac), 3.81 (Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-
-## Basic Build Instructions
-
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./UnscentedKF` Previous versions use i/o from text files.  The current state uses i/o
-from the simulator.
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html) as much as possible.
-
-## Generating Additional Data
-
-This is optional!
-
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
-
-## Project Instructions and Rubric
-
-This information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/c3eb3583-17b2-4d83-abf7-d852ae1b9fff/concepts/f437b8b0-f2d8-43b0-9662-72ac4e4029c1)
-for instructions and the project rubric.
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
+Set 2 vx was a little over the criteria but py has better result even than set 1.
+Dataset 2 RMSE: [.077, .063, .57, .24]
+![](./output/Dataset2_Result.png)
