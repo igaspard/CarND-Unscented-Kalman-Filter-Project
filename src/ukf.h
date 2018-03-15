@@ -67,10 +67,18 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  MatrixXd R_Lidar;
+  MatrixXd R_Radar;
+
   // Normalized Innovation Squared (NIS)
   double NIS_Ladar_;
 
   double NIS_Radar_;
+
+  // File Stream for radar and ladar NIS
+  std::fstream NIS_FS_Ladar_;
+
+  std::fstream NIS_FS_Radar_;
   /**
    * Constructor
    */

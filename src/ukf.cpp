@@ -68,11 +68,35 @@ UKF::UKF() {
   ///* predicted sigma points matrix
   Xsig_pred_ = MatrixXd(n_x_, 2*n_aug_+1);
 
+  R_Lidar = MatrixXd(2, 2);
+  R_Lidar << std_laspx_*std_laspx_, 0,
+             0, std_laspy_*std_laspy_;
+
+  R_Radar = MatrixXd(3, 3);
+  R_Radar << std_radr_*std_radr_, 0, 0,
+             0, std_radphi_*std_radphi_, 0,
+             0, 0, std_radrd_*std_radrd_;
+
   NIS_Ladar_ = 0.0;
   NIS_Radar_ = 0.0;
+
+  NIS_FS_Ladar_.open("../output/NIS_Ladar.txt", ios::out);
+  NIS_FS_Radar_.open("../output/NIS_Radar.txt", ios::out);
+
+  if ( !NIS_FS_Ladar_.is_open() ) {
+    cout << "Fail to open the NIS_Ladar.txt !!!" << endl;
+    exit(1);
+  }
+  if ( !NIS_FS_Radar_.is_open() ) {
+    cout << "Fail to open the NIS_Radar.txt !!!" << endl;
+    exit(1);
+  }
 }
 
-UKF::~UKF() {}
+UKF::~UKF() {
+  NIS_FS_Ladar_.close();
+  NIS_FS_Radar_.close();
+}
 
 /**
  * @param {MeasurementPackage} meas_package The latest measurement data of
@@ -170,13 +194,13 @@ void UKF::Prediction(double delta_t) {
 
   // SigmaPointPrediction
   for (int i = 0; i < 2*n_aug_+1; i++) {
-    double px       = Xsig_aug(0, i);
-    double py       = Xsig_aug(1, i);
-    double  v       = Xsig_aug(2, i);
-    double yaw      = Xsig_aug(3, i);
-    double yawd     = Xsig_aug(4, i);
-    double nu_a     = Xsig_aug(5, i);
-    double nu_yawdd = Xsig_aug(6, i);
+    const double px       = Xsig_aug(0, i);
+    const double py       = Xsig_aug(1, i);
+    const double  v       = Xsig_aug(2, i);
+    const double yaw      = Xsig_aug(3, i);
+    const double yawd     = Xsig_aug(4, i);
+    const double nu_a     = Xsig_aug(5, i);
+    const double nu_yawdd = Xsig_aug(6, i);
     // predicted state values
     double px_p, py_p;
 
@@ -271,10 +295,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
 
-  MatrixXd R = MatrixXd(n_z, n_z);
-  R << std_laspx_*std_laspx_, 0,
-       0, std_laspy_*std_laspy_;
-  S = S + R;
+  S = S + R_Lidar;
   // Calculate cross correlation matrix Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
   Tc.fill(0.0);
@@ -294,6 +315,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   VectorXd z_diff = z - z_pred;
 
   NIS_Ladar_ = z_diff.transpose() * S.inverse() * z_diff;
+  NIS_FS_Ladar_ << NIS_Ladar_ << endl;
 
   x_ = x_ + K * z_diff;
   P_ = P_ - K * S * K.transpose();
@@ -346,11 +368,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
-  MatrixXd R = MatrixXd(n_z, n_z);
-  R << std_radr_*std_radr_, 0, 0,
-       0, std_radphi_*std_radphi_, 0,
-       0, 0, std_radrd_*std_radrd_;
-  S = S + R;
+
+  S = S + R_Radar;
 
   // UpdateState
   MatrixXd Tc = MatrixXd(n_x_, n_z);
@@ -380,6 +399,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   while (z_diff(1) < -M_PI) z_diff(1) += 2.0*M_PI;
 
   NIS_Radar_ = z_diff.transpose() * S.inverse() * z_diff;
+  NIS_FS_Radar_ << NIS_Radar_ << endl;
 
   x_ = x_ + K * z_diff;
   P_ = P_ - K * S * K.transpose();
